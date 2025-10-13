@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>React to-do app</title>
+    <!-- React CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Dongle&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-yellow-50">
+    <div id="root"></div>
+    <script type="text/babel">
+      const API_URL = 'http://localhost:3002/api/todos';
+
+      function AddTodoSection({
+        setInputText,
+        inputText,
+        addTodo,
+        activeEnter,
+      }) {
+        return (
+          <div className="border border-blue-200 bg-white rounded-lg p-6 mb-6 text-center">
+            <h2 className="text-2xl md:text-3xl text-gray-800 mb-4">할일 추가하기</h2>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                onChange={(e) => setInputText(e.target.value)}
+                onKeyDown={(e) => activeEnter(e)}
+                value={inputText}
+                placeholder="새로운 할일을 입력하세요..."
+                className="flex-1 text-xl md:text-2xl px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              ></input>
+              <button
+                onClick={() => {
+                  if (!inputText || inputText.trim() === "") {
+                    alert("값을 입력하세요!");
+                    return;
+                  } else {
+                    addTodo();
+                  }
+                }}
+                className="bg-blue-400 hover:bg-blue-500 text-white px-6 py-2 rounded-lg font-medium text-xl md:text-2xl transition-colors"
+              >
+                추가
+              </button>
+            </div>
+          </div>
+        );
+      }
+
+      function TodoListSection({
+        todos,
+        toggleTodo,
+        deleteTodo,
+        editTodo,
+        filteredTodo,
+      }) {
+        return (
+          <div className="border border-blue-200 md:col-span-2 bg-white rounded-lg p-6">
+            <h2 className="text-xl md:text-2xl font-semibold text-gray-800 mb-4">
+              할일 목록
+            </h2>
+
+            <div id="todoList" className="space-y-2">
+              {todos.length === 0 ? (
+                <p className="text-gray-600 text-xl md:text-2xl"> 할 일이 없습니다.</p>
+              ) : (
+                <ul>
+                  {filteredTodo.map((todo) => (
+                    <li key={todo.id}>
+                      <div className="flex items-center gap-3 p-3 m-3 bg-gray-50 rounded-lg">
+                        <input
+                          type="checkbox"
+                          checked={todo.completed}
+                          onChange={() => toggleTodo(todo.id)}
+                          className="w-5 h-5 text-blue-600"
+                        ></input>
+                        <span
+                          className={
+                            todo.completed
+                              ? "flex-1 text-gray-400 text-2xl line-through"
+                              : "flex-1 text-gray-700 text-2xl"
+                          }
+                        >
+                          {todo.text}
+                        </span>
+                        <button
+                          onClick={() => editTodo(todo.id, todo.text)}
+                          className="text-blue-500 hover:text-blue-700 px-2 py-1 text-2xl rounded"
+                        >
+                          수정
+                        </button>
+                        <button
+                          onClick={() => deleteTodo(todo.id)}
+                          className="text-red-500 hover:text-red-700 px-2 py-1 text-2xl rounded"
+                        >
+                          삭제
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      function StatsSection({ total, completed, remaining }) {
+        return (
+          <div className="border border-blue-200 md:col-span-1 rounded-lg bg-white p-6">
+            <h3 className="text-xl md:text-2xl font-semibold text-gray-800 mb-3">
+              진행 현황
+            </h3>
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div>
+                <div
+                  id="totalCount"
+                  className="text-4xl font-bold text-blue-400"
+                >
+                  {total}
+                </div>
+                <div className="text-xl text-gray-500">전체</div>
+              </div>
+              <div>
+                <div
+                  id="completedCount"
+                  className="text-4xl font-bold text-pink-400"
+                >
+                  {completed}
+                </div>
+                <div className="text-xl text-gray-500">완료</div>
+              </div>
+              <div>
+                <div
+                  id="remainingCount"
+                  className="text-4xl font-bold text-yellow-400"
+                >
+                  {remaining}
+                </div>
+                <div className="text-xl text-gray-500">남은 일</div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      function ButtonsSection({setFilter, completeAll, deleteAll}){
+        return (<div className="flex border border-blue-200 bg-white rounded-lg p-6 mb-6">
+                <div className="flex-1">
+                  <button
+                    className="bg-blue-100 text-xl md:text-2xl rounded-lg px-3 py-1 mx-2 hover:bg-blue-300"
+                    onClick={() => setFilter("all")}
+                  >
+                    전체
+                  </button>
+                  <button
+                    className="bg-pink-100 text-xl md:text-2xl rounded-lg px-3 py-1 mx-2 hover:bg-pink-300"
+                    onClick={() => setFilter("completed")}
+                  >
+                    완료
+                  </button>
+                  <button
+                    className="bg-yellow-100 text-xl md:text-2xl rounded-lg px-3 py-1 mx-2 hover:bg-yellow-200"
+                    onClick={() => setFilter("remaining")}
+                  >
+                    진행중
+                  </button>
+                </div>
+
+                <div className="col-span-1">
+                  <button
+                    className="bg-gray-200 text-xl md:text-2xl rounded-lg px-3 py-1 mx-2 hover:bg-blue-300"
+                    onClick={() => completeAll()}
+                  >
+                    전체 완료
+                  </button>
+                  <button
+                    className="bg-gray-200 text-xl md:text-2xl rounded-lg px-3 py-1 mx-2 hover:bg-red-300"
+                    onClick={() => deleteAll()}
+                  >
+                    전체 삭제
+                  </button>
+                </div>
+              </div>
+            )
+      }
+
+      function TodoApp() {
+        const [todos, setTodos] = React.useState([]);
+        const [inputText, setInputText] = React.useState("");
+
+        const addTodo = async () => {
+          try {
+            const response = await fetch(API_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ text: inputText })
+            });
+            const data = await response.json();
+            if (data.success) {
+              setTodos([...todos, data.data]);
+              setInputText("");
+            }
+          } catch (err) {
+            console.error('추가 실패:', err);
+          }
+        };
+
+        const activeEnter = (e) => {
+          if(e.key === "Enter"){
+            e.preventDefault();
+             addTodo();
+            }
+          };
+
+        const toggleTodo = async (id) => {
+          const todo = todos.find(t => t.id === id);
+          try {
+            const response = await fetch(`${API_URL}/${id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ completed: !todo.completed })
+            });
+            const data = await response.json();
+            if (data.success) {
+              setTodos(todos.map(t => t.id === id ? data.data : t));
+            }
+          } catch (err) {
+            console.error('수정 실패:', err);
+          }
+        };
+
+        const deleteTodo = async (id) => {
+          try {
+            const response = await fetch(`${API_URL}/${id}`, {
+              method: 'DELETE'
+            });
+            if (response.status === 204) {
+              setTodos(todos.filter(t => t.id !== id));
+            }
+          } catch (err) {
+            console.error('삭제 실패:', err);
+          }
+        };
+
+        const editTodo = async (id, currentText) => {
+          const newText = prompt("할일을 수정하세요:", currentText);
+          if (newText !== null && newText.trim() !== "") {
+            try {
+              const response = await fetch(`${API_URL}/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: newText.trim() })
+              });
+              const data = await response.json();
+              if (data.success) {
+                setTodos(todos.map(t => t.id === id ? data.data : t));
+              }
+            } catch (err) {
+              console.error('수정 실패:', err);
+            }
+          }
+        };
+
+        const total = todos.length;
+        const completed = todos.filter((todo) => todo.completed).length;
+        const remaining = total - completed;
+
+        const [filter, setFilter] = React.useState("all");
+
+        const filterTodos = (todo) => {
+          if (filter === "all") return true;
+          if (filter === "completed") return todo.completed === true;
+          if (filter === "remaining") return todo.completed === false;
+        };
+
+        const filteredTodo = todos.filter(filterTodos);
+
+        const deleteAll = () => {
+          const confirmed = confirm("모든 목록을 삭제하시겠습니까?");
+          if (confirmed) {
+            setTodos([]);
+          }
+        };
+
+        const completeAll = () => {
+          const allDone = todos.map((todo) => {
+              return { ...todo, completed: true };
+            });
+
+          setTodos(allDone);
+        };
+
+        React.useEffect(() => {
+          fetch(API_URL)
+            .then(res => res.json())
+            .then(data => {
+              if (data.success) {
+                setTodos(data.data);
+              }
+            })
+            .catch(err => console.error('조회 실패:', err));
+        }, []);
+
+        return (
+          <>
+            <div className="max-w-5xl mx-auto p-10 font-[Dongle]">
+              <header className="text-center mb-8">
+                <h1 className="text-5xl md:text-7xl text-blue-400 mb-2">
+                  채연의 To-do List
+                </h1>
+              </header>
+
+              <AddTodoSection
+                setInputText={setInputText}
+                inputText={inputText}
+                addTodo={addTodo}
+                activeEnter={activeEnter}
+              />
+
+              <ButtonsSection
+                setFilter={setFilter}
+                completeAll={completeAll}
+                deleteAll={deleteAll}
+              />
+
+              <div className="flex flex-col md:grid md:grid-cols-3 gap-6">
+                <TodoListSection
+                  todos={todos}
+                  toggleTodo={toggleTodo}
+                  deleteTodo={deleteTodo}
+                  editTodo={editTodo}
+                  filteredTodo={filteredTodo}
+                />
+
+                <StatsSection
+                  total={total}
+                  completed={completed}
+                  remaining={remaining}
+                />
+              </div>
+            </div>
+          </>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById("root")).render(<TodoApp />);
+    </script>
+  </body>
+</html>
