@@ -1,6 +1,6 @@
 # 📝 Full Stack Todo App
 
-React + Express로 구축한 풀스택 할일 관리 애플리케이션입니다.
+React + Express + Supabase로 구축한 풀스택 할일 관리 애플리케이션입니다.
 
 ## ✨ 주요 기능
 
@@ -9,8 +9,9 @@ React + Express로 구축한 풀스택 할일 관리 애플리케이션입니다
 - ✅ 전체/완료/진행중 필터링
 - ✅ 전체 완료/전체 삭제 기능
 - ✅ 실시간 통계 (전체/완료/남은 일)
-- ✅ SQLite 기반 영구 데이터 저장 (서버 재시작 후에도 데이터 유지)
+- ✅ Supabase (PostgreSQL) 기반 클라우드 데이터 저장
 - ✅ 다중 브라우저 데이터 공유
+- ✅ 확장 가능한 백엔드 아키텍처
 
 ## 🛠️ 기술 스택
 
@@ -22,14 +23,15 @@ React + Express로 구축한 풀스택 할일 관리 애플리케이션입니다
 ### Backend
 - Node.js
 - Express
-- SQLite3
+- Supabase (PostgreSQL)
 - CORS
 
 ## 📦 설치 방법
 
 ### 1. 저장소 클론
 ```bash
-cd w4_assignment
+git clone https://github.com/chaeyeon-jin/fullstack_todo_list.git
+cd fullstack_todo_list
 ```
 
 ### 2. 의존성 설치
@@ -37,33 +39,72 @@ cd w4_assignment
 npm install
 ```
 
-또는 수동으로:
-```bash
-npm init -y
-npm install express cors sqlite3
+### 3. Supabase 프로젝트 설정
+
+#### 3.1 Supabase 계정 생성
+1. [Supabase](https://supabase.com) 방문
+2. GitHub 계정으로 로그인
+3. "New Project" 클릭
+4. 프로젝트 생성:
+   - Name: `fullstack-todo-app`
+   - Database Password: 안전한 비밀번호 설정
+   - Region: `Northeast Asia (Seoul)` 선택
+   - 생성 대기 (약 2분)
+
+#### 3.2 테이블 생성
+Supabase Dashboard → SQL Editor → New query
+
+```sql
+-- todos 테이블 생성
+CREATE TABLE todos (
+  id BIGSERIAL PRIMARY KEY,
+  text TEXT NOT NULL,
+  completed BOOLEAN DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 초기 데이터 삽입
+INSERT INTO todos (text, completed) VALUES
+  ('Express 서버 만들기', false),
+  ('React와 연결하기', false),
+  ('Full Stack 개발자 되기', false);
 ```
+
+#### 3.3 API 키 확인
+Settings → API → Project API keys에서:
+- `Project URL` 복사
+- `service_role` 키 복사
+
+### 4. 환경 변수 설정
+
+프로젝트 루트에 `.env` 파일 생성:
+
+```env
+SUPABASE_URL=https://your-project-id.supabase.co
+SUPABASE_SERVICE_KEY=your-service-role-key-here
+```
+
+⚠️ **중요**: `.env` 파일은 절대 Git에 커밋하지 마세요!
 
 ## 🚀 실행 방법
 
 ### 1. 백엔드 서버 실행
 ```bash
-node todo_api.js
+npm start
 ```
 또는:
 ```bash
-npm start
+node todo_api.js
 ```
 
-- 서버가 `http://localhost:3002`에서 실행됩니다.
-- 첫 실행 시 `todos.db` 파일이 자동으로 생성됩니다.
-- 초기 데모 데이터 3개가 자동으로 삽입됩니다.
+서버가 `http://localhost:3002`에서 실행됩니다.
 
 ### 2. 프론트엔드 실행
-- VSCode Live Server 사용:
+- **VSCode Live Server 사용** (권장):
   - `index.html` 우클릭 → "Open with Live Server"
   - `http://localhost:5500/index.html`에서 접속
 
-- 또는 다른 웹 서버 사용:
+- **다른 웹 서버 사용**:
   ```bash
   # Python 3
   python -m http.server 8000
@@ -94,8 +135,8 @@ GET /api/todos
   "success": true,
   "count": 3,
   "data": [
-    { "id": 1, "text": "할일 1", "completed": false },
-    { "id": 2, "text": "할일 2", "completed": true }
+    { "id": 1, "text": "할일 1", "completed": false, "created_at": "2025-10-14T..." },
+    { "id": 2, "text": "할일 2", "completed": true, "created_at": "2025-10-14T..." }
   ]
 }
 ```
@@ -115,7 +156,7 @@ Content-Type: application/json
 {
   "success": true,
   "message": "Todo가 생성되었습니다",
-  "data": { "id": 4, "text": "새로운 할일", "completed": false }
+  "data": { "id": 4, "text": "새로운 할일", "completed": false, "created_at": "..." }
 }
 ```
 
@@ -134,7 +175,7 @@ Content-Type: application/json
 ```json
 {
   "success": true,
-  "data": { "id": 1, "text": "수정된 텍스트", "completed": true }
+  "data": { "id": 1, "text": "수정된 텍스트", "completed": true, "created_at": "..." }
 }
 ```
 
@@ -152,6 +193,7 @@ DELETE /api/todos/:id
 - `204` No Content - 삭제 성공
 - `400` Bad Request - 잘못된 요청
 - `404` Not Found - 리소스를 찾을 수 없음
+- `500` Internal Server Error - 서버 오류
 
 ## 🧪 테스트 방법
 
@@ -196,10 +238,11 @@ fetch('http://localhost:3002/api/todos', {
 ## 📂 프로젝트 구조
 
 ```
-w4_assignment/
+fullstack_todo_list/
 ├── index.html          # React 프론트엔드
 ├── todo_api.js         # Express 백엔드 API
-├── todos.db            # SQLite 데이터베이스 (자동 생성)
+├── .env                # 환경 변수 (Git 제외)
+├── .env.example        # 환경 변수 예시
 ├── package.json        # 프로젝트 의존성
 ├── node_modules/       # 설치된 패키지
 ├── .gitignore          # Git 제외 파일
@@ -218,21 +261,55 @@ w4_assignment/
 
 ## ⚠️ 주의사항
 
-- 데이터는 **SQLite 데이터베이스 (todos.db)**에 영구 저장됩니다
-- `todos.db` 파일을 삭제하면 모든 데이터가 초기화됩니다
-- SQLite는 개발 및 소규모 프로젝트에 적합하며, 대규모 프로덕션 환경에서는 PostgreSQL, MySQL 등을 권장합니다
-- CORS가 모든 출처(`*`)를 허용하고 있으므로 실제 배포 시 보안 설정이 필요합니다
-- `todos.db` 파일은 `.gitignore`에 포함되어 있어 Git에 업로드되지 않습니다
+- 데이터는 **Supabase 클라우드 PostgreSQL**에 저장됩니다
+- `.env` 파일은 절대 Git에 커밋하지 마세요 (보안 이슈)
+- `service_role` 키는 서버에서만 사용하세요 (프론트엔드 노출 금지)
+- Supabase 무료 플랜:
+  - 프로젝트 2개
+  - 500MB 데이터베이스
+  - 월 50만 건 API 요청
+- 프로덕션 배포 시 CORS 설정 수정 권장
+
+## 🚀 배포 방법 (Vercel)
+
+### 1. Vercel 설치
+```bash
+npm install -g vercel
+```
+
+### 2. 배포
+```bash
+vercel
+```
+
+### 3. 환경 변수 설정
+```bash
+vercel env add SUPABASE_URL
+vercel env add SUPABASE_SERVICE_KEY
+```
+
+### 4. 프로덕션 배포
+```bash
+vercel --prod
+```
 
 ## 🔮 향후 개선사항
 
 - [x] ~~SQLite 연동으로 영구 저장~~ ✅ 완료
+- [x] ~~Supabase 클라우드 DB 마이그레이션~~ ✅ 완료
+- [ ] 실시간 구독 (다른 브라우저 자동 동기화)
 - [ ] 사용자 인증 (회원가입/로그인)
 - [ ] 할일 카테고리/태그 기능
 - [ ] 마감일 설정
 - [ ] 우선순위 기능
 - [ ] 검색 기능
-- [ ] PostgreSQL/MySQL 마이그레이션 (대규모 환경)
+- [ ] 드래그 앤 드롭 정렬
+
+## 📊 마이그레이션 히스토리
+
+1. **v1.0** - In-memory 배열 (초기 버전)
+2. **v2.0** - SQLite 로컬 DB
+3. **v3.0** - Supabase 클라우드 DB (현재) ✅
 
 ## 📄 라이선스
 
@@ -245,4 +322,3 @@ MIT License
 ---
 
 **문의사항이나 버그 발견 시 이슈를 남겨주세요!**
-

@@ -1,7 +1,7 @@
 {
   "name": "fullstack-todo-app",
   "version": "1.0.0",
-  "description": "Full Stack Todo Application with React and Express",
+  "description": "Full Stack Todo Application with React, Express and Supabase",
   "main": "todo_api.js",
   "scripts": {
     "start": "node todo_api.js",
@@ -11,6 +11,8 @@
     "todo",
     "react",
     "express",
+    "supabase",
+    "postgresql",
     "fullstack",
     "rest-api"
   ],
@@ -18,8 +20,9 @@
   "license": "MIT",
   "type": "commonjs",
   "dependencies": {
+    "@supabase/supabase-js": "^2.75.0",
     "cors": "^2.8.5",
-    "express": "^5.1.0",
-    "sqlite3": "^5.1.7"
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0"
   }
 }
