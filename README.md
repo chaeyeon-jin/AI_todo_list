@@ -9,7 +9,8 @@ React + Express로 구축한 풀스택 할일 관리 애플리케이션입니다
 - ✅ 전체/완료/진행중 필터링
 - ✅ 전체 완료/전체 삭제 기능
 - ✅ 실시간 통계 (전체/완료/남은 일)
-- ✅ 서버 기반 데이터 저장 (다중 브라우저 공유 가능)
+- ✅ SQLite 기반 영구 데이터 저장 (서버 재시작 후에도 데이터 유지)
+- ✅ 다중 브라우저 데이터 공유
 
 ## 🛠️ 기술 스택
 
@@ -21,6 +22,7 @@ React + Express로 구축한 풀스택 할일 관리 애플리케이션입니다
 ### Backend
 - Node.js
 - Express
+- SQLite3
 - CORS
 
 ## 📦 설치 방법
@@ -38,7 +40,7 @@ npm install
 또는 수동으로:
 ```bash
 npm init -y
-npm install express cors
+npm install express cors sqlite3
 ```
 
 ## 🚀 실행 방법
@@ -47,7 +49,14 @@ npm install express cors
 ```bash
 node todo_api.js
 ```
-서버가 `http://localhost:3002`에서 실행됩니다.
+또는:
+```bash
+npm start
+```
+
+- 서버가 `http://localhost:3002`에서 실행됩니다.
+- 첫 실행 시 `todos.db` 파일이 자동으로 생성됩니다.
+- 초기 데모 데이터 3개가 자동으로 삽입됩니다.
 
 ### 2. 프론트엔드 실행
 - VSCode Live Server 사용:
@@ -190,8 +199,10 @@ fetch('http://localhost:3002/api/todos', {
 w4_assignment/
 ├── index.html          # React 프론트엔드
 ├── todo_api.js         # Express 백엔드 API
+├── todos.db            # SQLite 데이터베이스 (자동 생성)
 ├── package.json        # 프로젝트 의존성
 ├── node_modules/       # 설치된 패키지
+├── .gitignore          # Git 제외 파일
 └── README.md          # 프로젝트 문서
 ```
 
@@ -207,18 +218,21 @@ w4_assignment/
 
 ## ⚠️ 주의사항
 
-- 현재 데이터는 **메모리에 저장**되므로 서버 재시작 시 초기화됩니다
-- 프로덕션 환경에서는 데이터베이스(MongoDB, PostgreSQL 등) 사용을 권장합니다
+- 데이터는 **SQLite 데이터베이스 (todos.db)**에 영구 저장됩니다
+- `todos.db` 파일을 삭제하면 모든 데이터가 초기화됩니다
+- SQLite는 개발 및 소규모 프로젝트에 적합하며, 대규모 프로덕션 환경에서는 PostgreSQL, MySQL 등을 권장합니다
 - CORS가 모든 출처(`*`)를 허용하고 있으므로 실제 배포 시 보안 설정이 필요합니다
+- `todos.db` 파일은 `.gitignore`에 포함되어 있어 Git에 업로드되지 않습니다
 
 ## 🔮 향후 개선사항
 
-- [ ] MongoDB 연동으로 영구 저장
+- [x] ~~SQLite 연동으로 영구 저장~~ ✅ 완료
 - [ ] 사용자 인증 (회원가입/로그인)
 - [ ] 할일 카테고리/태그 기능
 - [ ] 마감일 설정
 - [ ] 우선순위 기능
 - [ ] 검색 기능
+- [ ] PostgreSQL/MySQL 마이그레이션 (대규모 환경)
 
 ## 📄 라이선스
 
@@ -226,7 +240,7 @@ MIT License
 
 ## 👤 작성자
 
-채연
+진채연
 
 ---
 
