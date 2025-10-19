@@ -4,12 +4,22 @@ React + Express + Supabase로 구축한 풀스택 할일 관리 애플리케이�
 
 ## ✨ 주요 기능
 
+### 기본 Todo 기능
 - ✅ 할일 추가, 수정, 삭제
 - ✅ 완료 상태 토글
 - ✅ 전체/완료/진행중 필터링
 - ✅ 전체 완료/전체 삭제 기능
 - ✅ 실시간 통계 (전체/완료/남은 일)
+
+### 🤖 AI 기능 (NEW!)
+- ✅ **AI로 계획 세우기**: 큰 목표를 입력하면 Gemini AI가 3~5개의 실행 가능한 할일로 자동 분해
+- ✅ **선택적 추가**: 생성된 할일 중 원하는 항목만 선택하여 추가 가능
+- ✅ **전체 추가**: 생성된 모든 할일을 한번에 추가
+- ✅ **실시간 AI 처리**: 로딩 상태 및 에러 처리 UI
+
+### 백엔드 & 데이터베이스
 - ✅ Supabase (PostgreSQL) 기반 클라우드 데이터 저장
+- ✅ 사용자 인증 (회원가입/로그인)
 - ✅ 다중 브라우저 데이터 공유
 - ✅ 확장 가능한 백엔드 아키텍처
 
@@ -24,7 +34,11 @@ React + Express + Supabase로 구축한 풀스택 할일 관리 애플리케이�
 - Node.js
 - Express
 - Supabase (PostgreSQL)
+- Google Gemini AI (gemini-2.0-flash-exp)
 - CORS
+
+### Authentication
+- Supabase Auth (이메일/비밀번호)
 
 ## 📦 설치 방법
 
@@ -75,13 +89,31 @@ Settings → API → Project API keys에서:
 - `Project URL` 복사
 - `service_role` 키 복사
 
-### 4. 환경 변수 설정
+### 4. Gemini API 키 발급
+
+#### 4.1 Google AI Studio 접속
+1. [Google AI Studio](https://makersuite.google.com/app/apikey) 방문
+2. Google 계정으로 로그인
+3. **"Get API Key"** 또는 **"Create API Key"** 클릭
+4. API 키 복사
+
+### 5. 환경 변수 설정
 
 프로젝트 루트에 `.env` 파일 생성:
 
 ```env
+# Supabase Configuration
 SUPABASE_URL=https://your-project-id.supabase.co
 SUPABASE_SERVICE_KEY=your-service-role-key-here
+
+# Gemini AI Configuration
+GEMINI_API_KEY=your-gemini-api-key-here
+```
+
+또는 `.env.example` 파일을 복사:
+```bash
+cp .env.example .env
+# .env 파일을 열어 실제 값으로 수정
 ```
 
 ⚠️ **중요**: `.env` 파일은 절대 Git에 커밋하지 마세요!
@@ -119,10 +151,10 @@ node todo_api.js
 
 ### Base URL
 ```
-http://localhost:3002/api/todos
+http://localhost:3002
 ```
 
-### 엔드포인트
+### Todo 엔드포인트
 
 #### 1. 전체 조회
 ```http
@@ -186,6 +218,32 @@ DELETE /api/todos/:id
 
 **응답:** `204 No Content`
 
+### AI 엔드포인트
+
+#### 5. AI로 할일 생성
+```http
+POST /api/ai/generate-todos
+Content-Type: application/json
+
+{
+  "goal": "웹 개발 공부하기"
+}
+```
+
+**응답 예시:**
+```json
+{
+  "success": true,
+  "count": 4,
+  "todos": [
+    "HTML, CSS, JavaScript 기초 문법 학습하기",
+    "React 튜토리얼 따라하기",
+    "간단한 Todo 앱 만들어보기",
+    "Git과 GitHub 사용법 익히기"
+  ]
+}
+```
+
 ### HTTP 상태 코드
 
 - `200` OK - 성공
@@ -238,14 +296,15 @@ fetch('http://localhost:3002/api/todos', {
 ## 📂 프로젝트 구조
 
 ```
-fullstack_todo_list/
-├── index.html          # React 프론트엔드
-├── todo_api.js         # Express 백엔드 API
+w4-5_assignment/
+├── index.html          # React 프론트엔드 (UI + AI 기능)
+├── todo_api.js         # Express 백엔드 API (Todo CRUD + AI 엔드포인트)
 ├── .env                # 환경 변수 (Git 제외)
 ├── .env.example        # 환경 변수 예시
 ├── package.json        # 프로젝트 의존성
 ├── node_modules/       # 설치된 패키지
 ├── .gitignore          # Git 제외 파일
+├── todos.db            # SQLite 데이터베이스 (로컬 백업)
 └── README.md          # 프로젝트 문서
 ```
 
@@ -297,19 +356,86 @@ vercel --prod
 
 - [x] ~~SQLite 연동으로 영구 저장~~ ✅ 완료
 - [x] ~~Supabase 클라우드 DB 마이그레이션~~ ✅ 완료
+- [x] ~~사용자 인증 (회원가입/로그인)~~ ✅ 완료
+- [x] ~~AI로 할일 생성~~ ✅ 완료
 - [ ] 실시간 구독 (다른 브라우저 자동 동기화)
-- [ ] 사용자 인증 (회원가입/로그인)
 - [ ] 할일 카테고리/태그 기능
 - [ ] 마감일 설정
 - [ ] 우선순위 기능
 - [ ] 검색 기능
 - [ ] 드래그 앤 드롭 정렬
+- [ ] AI로 할일 설명 자동 생성
+- [ ] 음성으로 할일 추가
 
 ## 📊 마이그레이션 히스토리
 
 1. **v1.0** - In-memory 배열 (초기 버전)
 2. **v2.0** - SQLite 로컬 DB
-3. **v3.0** - Supabase 클라우드 DB (현재) ✅
+3. **v3.0** - Supabase 클라우드 DB
+4. **v4.0** - Supabase Auth 추가 (사용자 인증)
+5. **v5.0** - Google Gemini AI 통합 (현재) ✅
+
+## 📸 스크린샷
+
+### 1. 로그인/회원가입 화면
+사용자 인증을 통해 개인별 할일 관리가 가능합니다.
+
+### 2. AI로 계획 세우기
+큰 목표를 입력하면 AI가 자동으로 실행 가능한 단계로 분해합니다.
+
+### 3. 선택적 할일 추가
+생성된 할일 중 원하는 항목만 선택하여 추가할 수 있습니다.
+
+### 4. Todo 목록 관리
+직관적인 UI로 할일을 쉽게 관리하고 진행 현황을 실시간으로 확인합니다.
+
+## 🎓 어려웠던 점 및 해결 방법
+
+### 1. Gemini API 모델 버전 이슈
+**문제:** `gemini-pro` 모델이 더 이상 지원되지 않아 404 에러 발생
+
+**해결:** 
+- 최신 `gemini-2.0-flash-exp` 모델로 변경
+- Google AI Studio 문서를 참고하여 지원되는 모델 확인
+- 실험 버전(exp)을 사용하여 무료로 테스트
+
+### 2. AI 응답 파싱 문제
+**문제:** AI가 번호나 불릿 포인트를 포함하여 응답하는 경우 처리 필요
+
+**해결:**
+```javascript
+const todos = text
+  .split('\n')
+  .map(line => line.trim())
+  .filter(line => line.length > 0)
+  .filter(line => !line.match(/^[\d\.\-\*]+\s/)) // 번호 제거
+  .slice(0, 5); // 최대 5개
+```
+
+### 3. 사용자별 데이터 격리
+**문제:** 여러 사용자의 할일이 섞여서 표시됨
+
+**해결:**
+- Supabase RLS (Row Level Security) 활성화
+- 각 Todo에 `user_id` 컬럼 추가
+- 인증된 사용자만 자신의 데이터에 접근 가능하도록 설정
+
+### 4. 선택적 추가 기능 UX
+**문제:** 사용자가 원하는 할일만 선택하고 싶어함
+
+**해결:**
+- 체크박스와 클릭 이벤트 모두 지원
+- 선택된 항목 수를 버튼에 실시간 표시
+- 시각적 피드백(배경색, 테두리)으로 선택 상태 명확히 표시
+
+### 5. 환경 변수 관리
+**문제:** API 키를 안전하게 관리해야 함
+
+**해결:**
+- `.env` 파일 사용
+- `.gitignore`에 `.env` 추가
+- `.env.example` 파일로 템플릿 제공
+- 백엔드에서만 API 호출하여 키 노출 방지
 
 ## 📄 라이선스
 

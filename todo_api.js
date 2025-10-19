@@ -7,6 +7,7 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const app = express();
 const PORT = 3002;
@@ -21,7 +22,11 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
+// Gemini AI 초기화
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
 console.log('✅ Supabase 연결 설정 완료');
+console.log('✅ Gemini AI 초기화 완료');
 
 // GET /api/todos - 전체 조회
 app.get('/api/todos', async (req, res) => {
@@ -198,6 +203,74 @@ app.delete('/api/todos/:id', async (req, res) => {
   }
 });
 
+// POST /api/ai/generate-todos - AI로 할일 생성
+app.post('/api/ai/generate-todos', async (req, res) => {
+  const { goal } = req.body;
+
+  if (!goal || goal.trim() === '') {
+    return res.status(400).json({
+      success: false,
+      error: '목표를 입력해주세요'
+    });
+  }
+
+  try {
+    console.log(`🤖 AI 요청: "${goal}"`);
+
+    // Gemini 모델 사용 (gemini-2.0-flash-exp - 최신 실험 모델, 무료)
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+
+    const prompt = `당신은 목표를 실행 가능한 작은 할일(Todo)로 쪼개는 전문가입니다.
+
+사용자의 목표: "${goal}"
+
+위 목표를 달성하기 위한 구체적이고 실행 가능한 할일 목록을 3~5개로 나눠주세요.
+
+규칙:
+1. 각 할일은 명확하고 구체적이어야 합니다
+2. 실행 가능한 작은 단계로 나눠야 합니다
+3. 순서대로 정렬해주세요
+4. 각 할일은 한 문장으로 작성합니다
+5. 반드시 3개 이상 5개 이하로 작성합니다
+
+응답 형식: 각 줄마다 하나의 할일만 작성하고, 번호나 특수문자 없이 순수한 텍스트만 출력하세요.
+
+예시 입력: "영어 회화 실력 향상하기"
+예시 출력:
+영어 학습 앱 다운로드하고 학습 계획 세우기
+매일 10분씩 영어 팟캐스트 듣기
+일주일에 3번 영어 일기 쓰기
+온라인 영어 회화 수업 등록하기
+영어로 말하는 연습을 위해 언어 교환 파트너 찾기`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    // 응답을 줄 단위로 나누고 빈 줄 제거
+    const todos = text
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0)
+      .filter(line => !line.match(/^[\d\.\-\*]+\s/)) // 번호나 불릿 포인트 제거
+      .slice(0, 5); // 최대 5개
+
+    console.log(`✅ AI 생성 완료: ${todos.length}개의 할일`);
+
+    res.json({
+      success: true,
+      todos: todos,
+      count: todos.length
+    });
+  } catch (err) {
+    console.error('AI 생성 실패:', err);
+    res.status(500).json({
+      success: false,
+      error: 'AI 처리 중 오류가 발생했습니다: ' + err.message
+    });
+  }
+});
+
 // 서버 시작
 app.listen(PORT, () => {
   console.log('='.repeat(60));
@@ -205,11 +278,13 @@ app.listen(PORT, () => {
   console.log('='.repeat(60));
   console.log(`\n📍 서버 주소: http://localhost:${PORT}`);
   console.log('💾 데이터베이스: Supabase (PostgreSQL)');
+  console.log('🤖 AI: Google Gemini');
   console.log('✅ API 엔드포인트:');
-  console.log('   GET    /api/todos     - 전체 조회');
-  console.log('   POST   /api/todos     - 새 항목 추가');
-  console.log('   PUT    /api/todos/:id - 항목 수정');
-  console.log('   DELETE /api/todos/:id - 항목 삭제\n');
+  console.log('   GET    /api/todos              - 전체 조회');
+  console.log('   POST   /api/todos              - 새 항목 추가');
+  console.log('   PUT    /api/todos/:id          - 항목 수정');
+  console.log('   DELETE /api/todos/:id          - 항목 삭제');
+  console.log('   POST   /api/ai/generate-todos  - AI로 할일 생성\n');
   console.log('종료: Ctrl + C\n');
   console.log('='.repeat(60));
 });
